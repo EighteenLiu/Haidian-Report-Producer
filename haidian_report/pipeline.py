@@ -221,6 +221,13 @@ def build_street_context(
         grid_management,
         law_enforcement,
     )
+    report_sections = build_report_sections(
+        city_furniture,
+        backstreets,
+        grid_management,
+        law_enforcement,
+        suggestions,
+    )
     return StreetReportContext(
         street_name=street_name,
         report_month_label=month_label,
@@ -235,6 +242,7 @@ def build_street_context(
         grid_management=grid_management,
         law_enforcement=law_enforcement,
         suggestions=suggestions,
+        report_sections=report_sections,
     )
 
 
@@ -543,6 +551,51 @@ def build_suggestions(*sections: dict[str, object]) -> list[dict[str, object]]:
     if backstreet.get("text") and len(suggestions) < 3:
         suggestions.append({"number": "三是", "title": "", "body": SUGGESTION_TEXTS["backstreet"]})
     return suggestions[:3]
+
+
+def build_report_sections(
+    city_furniture: dict[str, object],
+    backstreets: dict[str, object],
+    grid_management: dict[str, object],
+    law_enforcement: dict[str, object],
+    suggestions: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    sections: list[dict[str, object]] = []
+
+    def add_section(title: str, paragraphs: list[str]) -> None:
+        content = [str(paragraph).strip() for paragraph in paragraphs if str(paragraph).strip()]
+        if not content:
+            return
+        sections.append(
+            {
+                "number": _section_number(len(sections) + 3),
+                "title": title,
+                "paragraphs": content,
+            }
+        )
+
+    add_section("城市家具治理", [str(city_furniture.get("text") or "")])
+    add_section("背街小巷治理", [str(backstreets.get("text") or "")])
+    add_section("网格治理", [str(grid_management.get("text") or "")])
+    add_section(
+        "综合执法",
+        [
+            str(law_enforcement.get("appeal_text") or ""),
+            str(law_enforcement.get("key_assignment_text") or ""),
+        ],
+    )
+    add_section(
+        "工作建议",
+        [f"{item.get('number', '')}{item.get('body', '')}" for item in suggestions if str(item.get("body") or "").strip()],
+    )
+    return sections
+
+
+def _section_number(index: int) -> str:
+    numerals = ("一", "二", "三", "四", "五", "六", "七", "八", "九", "十")
+    if 1 <= index <= len(numerals):
+        return numerals[index - 1]
+    return str(index)
 
 
 def generate_batch(

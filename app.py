@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 import time
 import threading
 from pathlib import Path
@@ -12,9 +13,10 @@ from tkinter import filedialog, messagebox
 from haidian_report.pipeline import generate_batch, generate_summary_only
 
 
-ROOT = Path(__file__).resolve().parent
-DEFAULT_DETAIL_TEMPLATE = ROOT / "街道案件明细表模板.xlsx"
-DEFAULT_REPORT_TEMPLATE = ROOT / "街道环境建设管理工作运行情况分析报告模板.docx"
+ROOT = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
+TEMPLATE_ROOT = ROOT / "templates" if (ROOT / "templates").exists() else ROOT
+DEFAULT_DETAIL_TEMPLATE = TEMPLATE_ROOT / "街道案件明细表模板.xlsx"
+DEFAULT_REPORT_TEMPLATE = TEMPLATE_ROOT / "街道环境建设管理工作运行情况分析报告模板.docx"
 DEFAULT_INPUT_DIR = ROOT
 DEFAULT_OUTPUT_DIR = ROOT / "out"
 
@@ -23,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="街道分报告生成器")
     parser.add_argument("--input", nargs="*", help="输入文件或目录")
     parser.add_argument("--output", help="输出目录")
-    parser.add_argument("--template-dir", help="模板目录", default=str(ROOT))
+    parser.add_argument("--template-dir", help="模板目录", default=str(TEMPLATE_ROOT))
     parser.add_argument("--detail-template", help="案件明细表模板文件")
     parser.add_argument("--report-template", help="环境建设管理工作运行情况分析报告模板文件")
     return parser

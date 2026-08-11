@@ -46,3 +46,4 @@ class StreetReportContext:
     grid_management: dict[str, Any] = field(default_factory=dict)
     law_enforcement: dict[str, Any] = field(default_factory=dict)
     suggestions: list[dict[str, Any]] = field(default_factory=list)
+    report_sections: list[dict[str, Any]] = field(default_factory=list)
