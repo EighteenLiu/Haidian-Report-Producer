@@ -1,0 +1,2 @@
+"""Haidian street report generator."""
+
