@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
+import re
 from typing import Callable, Iterable
 
 from openpyxl import load_workbook
@@ -156,7 +157,7 @@ def build_street_context(
     tables: dict[str, list[TableSheet]],
 ) -> StreetReportContext:
     current_year, current_month, previous_month, previous_year, month_label = period
-    street_rows = [r for r in data_rows if str(r.get("月份") or "") == month_label and str(r.get("检查点位2级") or "") == street_name]
+    street_rows = [r for r in data_rows if str(r.get("月份") or "") == month_label and str(r.get("街镇分中心") or "") == street_name]
     current_total = len(street_rows)
     by_source = Counter(str(r.get("案件来源") or "") for r in street_rows)
     responsibility = Counter(str(r.get("整改责任单位报告") or r.get("整改责任单位") or "") for r in street_rows)
@@ -170,7 +171,7 @@ def build_street_context(
     pub_types = Counter(_clean_issue_name(str(r.get("检查指标3级") or "")) for r in public_rows)
     pub_roads = Counter(str(r.get("道路") or "").strip() for r in public_rows if str(r.get("道路") or "").strip())
     com_types = Counter(_clean_issue_name(str(r.get("检查指标3级") or "")) for r in community_rows)
-    com_places = Counter(str(r.get("检查点位3级") or "").strip() for r in community_rows if str(r.get("检查点位3级") or "").strip())
+    com_places = Counter(_clean_community_name(r.get("小区")) for r in community_rows if _clean_community_name(r.get("小区")))
 
     discovery = summary
     if not discovery:
@@ -272,7 +273,7 @@ def build_normal_management(
     pub_types = Counter(str(r.get("检查指标3级") or "").replace("、", "，").replace(",", "、") for r in public_rows if str(r.get("检查指标3级") or "").strip())
     pub_roads = Counter(str(r.get("道路") or "").strip() for r in public_rows if str(r.get("道路") or "").strip())
     com_types = Counter(str(r.get("检查指标3级") or "").replace("、", "，").replace(",", "、") for r in community_rows if str(r.get("检查指标3级") or "").strip())
-    com_places = Counter(str(r.get("检查点位3级") or "").strip() for r in community_rows if str(r.get("检查点位3级") or "").strip())
+    com_places = Counter(_clean_community_name(r.get("小区")) for r in community_rows if _clean_community_name(r.get("小区")))
 
     public_ratio = f"{pub_count / total * 100:.2f}%" if total else "0.00%"
     community_ratio = f"{com_count / total * 100:.2f}%" if total else "0.00%"
@@ -325,6 +326,11 @@ def _delta_pct(current: int, previous: int) -> str:
 
 def _clean_issue_name(text: str) -> str:
     return text.replace("、", "").replace("，", "").strip()
+
+
+def _clean_community_name(text: str) -> str:
+    name = str(text or "").strip()
+    return re.sub(r"^(?:[（(][^）)]*[☆Ұ][^）)]*[）)]\s*)+", "", name).strip()
 
 
 def _issue_phrase(counter: Counter[str], limit: int, suffix: str = "个") -> str:
@@ -641,7 +647,7 @@ def generate_batch(
         detail_rows = [
             normalize_detail_row(r)
             for r in data_rows
-            if str(r.get("月份") or "") == period[4] and str(r.get("检查点位2级") or "") == street
+            if str(r.get("月份") or "") == period[4] and str(r.get("街镇分中心") or "") == street
         ]
         detail_path = street_dir / f"{period[4]}{street}案件明细表.xlsx"
         report_path = street_dir / f"{period[4]}{street}环境建设管理工作运行情况分析报告.docx"
